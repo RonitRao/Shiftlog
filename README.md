@@ -89,9 +89,8 @@ shiftlog/
 ├── .gitignore                  # Strict security profile rules (blocking .env leakage)
 └── package.json                # Project runtime configurations & dependencies
 
----
 
-## ⚙️ Development Environment Setup
+⚙️ Development Environment Setup
 
 To initialize and audit this framework module on a local dev environment, execute the following operational commands within your terminal environment:
 
