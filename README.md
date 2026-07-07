@@ -95,32 +95,22 @@ shiftlog/
 
 To initialize and audit this framework module on a local dev environment, execute the following operational commands within your terminal environment:
 
-### Clean Framework Dependencies
-
-```bash
-
+Start with a Clean Framework Dependencies Installation by:
 npm install
 
+Followed by the next steps below:
 ```
-
 ### Core Utilities & Backend Integration Setup
 
 ```bash
-
 npm install @supabase/supabase-js @groq/groq-sdk lucide-react
-
 ```
 ### Layout & Component Style Utilities
-
 ```bash
-
 npm install clsx tailwind-merge
-
 ```
 ### Local Dev Server Initialization
 
 ```bash
-
 npm run dev
-
 ```
