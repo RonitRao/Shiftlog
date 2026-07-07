@@ -15,19 +15,19 @@
 
 ### 🖥️ Immersive Entry Platform
 The system utilizes a slow-sweeping kinetic background mesh mixed with premium frosted glass navigation headers and seamless text glow gradients.
-![ShiftLog Hub Landing Platform](./assets/landing-hero.jpg)
+![ShiftLog Hub Landing Platform](./assets/landing-hero.png)
 
 ### 📊 System Analytics Console
 Features real-time diagnostic distribution metrics, odometer variance charts, and line-haul productivity tracking mapped across high-fidelity data visualization grids.
-![System Analytics Dashboard](./assets/analytics-dashboard.jpg)
+![System Analytics Dashboard](./assets/analytics-dashboard.png)
 
 ### 📋 Logbook Registry
 A clean log registry overview implementing state filters, detailed compliance parameter inspection tools, and strict client-side data mutation safety rails.
-![Logbook Registry](./assets/logbook-registry.jpg)
+![Logbook Registry](./assets/logbook-registry.png)
 
 ### 👤 Operator Management & Verification
 The operational profile hub featuring user session tracking credentials, custom configuration state parameters, and the serverless email manifest trigger node.
-![Profile & Operator Settings](./assets/operator-profile.jpg)
+![Profile & Operator Settings](./assets/operator-profile.png)
 
 ---
 
@@ -88,3 +88,39 @@ shiftlog/
 ├── assets/                     # Embedded UI documentation visualization blocks
 ├── .gitignore                  # Strict security profile rules (blocking .env leakage)
 └── package.json                # Project runtime configurations & dependencies
+
+---
+
+## ⚙️ Development Environment Setup
+
+To initialize and audit this framework module on a local dev environment, execute the following operational commands within your terminal environment:
+
+### Clean Framework Dependencies
+
+```bash
+
+npm install
+
+```
+
+### Core Utilities & Backend Integration Setup
+
+```bash
+
+npm install @supabase/supabase-js @groq/groq-sdk lucide-react
+
+```
+### Layout & Component Style Utilities
+
+```bash
+
+npm install clsx tailwind-merge
+
+```
+### Local Dev Server Initialization
+
+```bash
+
+npm run dev
+
+```
