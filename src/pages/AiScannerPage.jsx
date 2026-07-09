@@ -4,7 +4,7 @@ import Sidebar from "@/components/Sidebar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import LoadingScreen from "@/components/ui/LoadingScreen";
-import { groq } from "@/lib/groq"; 
+import Groq from "groq-sdk"; 
 import { 
   UploadCloud, 
   Sparkles, 
@@ -19,6 +19,12 @@ import {
   Layers, 
   Sliders 
 } from "lucide-react";
+
+// Initialize the Groq SDK directly in the browser to prevent 10s serverless timeouts
+const groqClient = new Groq({
+  apiKey: import.meta.env.VITE_GROQ_API_KEY,
+  dangerouslyAllowBrowser: true
+});
 
 export default function AiScannerPage() {
   const [user, setUser] = useState(null);
@@ -37,7 +43,7 @@ export default function AiScannerPage() {
 
   const [formVehicleId, setFormVehicleId] = useState("");
   const [formStatus, setFormStatus] = useState("active");
-  const [formNotes, setFormNotes] = useState("");
+  const [formNotes, setFormNotes] = useState(" ");
 
   useEffect(() => {
     const initScanner = async () => {
@@ -61,7 +67,7 @@ export default function AiScannerPage() {
   }, []);
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
 
     setImageFile(file);
@@ -74,7 +80,10 @@ export default function AiScannerPage() {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result.split(",")[1]);
+      reader.onload = () => {
+        const resultString = reader.result;
+        resolve(resultString.split(",")[1]);
+      };
       reader.onerror = (error) => reject(error);
     });
   };
@@ -120,7 +129,7 @@ export default function AiScannerPage() {
         }
       `;
 
-      const response = await groq.chat.completions.create({
+      const response = await groqClient.chat.completions.create({
         messages: [
           {
             role: "user",
@@ -130,10 +139,10 @@ export default function AiScannerPage() {
             ]
           }
         ],
-        model: "meta-llama/llama-4-scout-17b-16e-instruct" 
+        model: "llama-3.2-11b-vision-preview"
       });
 
-      let rawContent = response.choices[0].message.content.trim();
+      let rawContent = response.choices[0].message.content?.trim() || "";
       
       if (rawContent.startsWith("```")) {
         rawContent = rawContent.replace(/^```json\s*/i, "").replace(/```$/, "").trim();
@@ -150,7 +159,7 @@ export default function AiScannerPage() {
       setFormVehicleId(parsedData.matched_vehicle_id);
       setFormStatus(parsedData.assigned_status);
       setFormNotes(parsedData.inspection_parameters);
-      setStatusMessage("Success: Groq Neural Vision Diagnostic Complete.");
+      setStatusMessage("Success: Groq Client Vision Diagnostic Complete.");
     } catch (err) {
       console.error("Vision Processing Exception caught: ", err);
       setStatusMessage(`AI Engine Error: ${err.message || "Failed parsing matrix layers."}`);
@@ -203,38 +212,33 @@ export default function AiScannerPage() {
   return (
     <div className="min-h-screen bg-[#09090b] text-zinc-100 flex font-sans antialiased relative overflow-x-hidden">
       
-      {/* BACKGROUND GRAPHIC INTERFACE MAP */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute inset-0 bg-[#09090b]" />
         <div className="absolute inset-0 opacity-20 mix-blend-screen" style={{ background: "linear-gradient(230deg, #660bea 0%, #0200fb 50%, #09090b 100%)" }} />
-        <div className="absolute inset-0 flex justify-between opacity-25 filter blur-[1px] transform rotate-12 scale-125 animate-[slide_3s_ease-in-out_infinite_alternate]">
+        <div className="absolute inset-0 flex justify-between opacity-25 filter blur-[1px] transform rotate-12 scale-125">
           {[...Array(32)].map((_, i) => (
             <div key={i} className="h-full bg-zinc-950/90" style={{ width: `${12 + (i % 3) * 6}px`, minWidth: "10px" }} />
           ))}
         </div>
-        <div className="absolute inset-0 mix-blend-multiply animate-[spotlight_12s_ease-in-out_infinite_alternate]" style={{ background: "radial-gradient(circle 65% at var(--spotlight-x, 30%) var(--spotlight-y, 40%), transparent 10%, #09090b 95%)" }} />
       </div>
 
-      {/* FIXED SIDEBAR PIN HOUSING */}
       <div className="w-64 shrink-0 h-screen fixed left-0 top-0 z-50">
         <Sidebar activePage="ai-scanner" userEmail={user?.email} />
       </div>
 
-      {/* REALIGNED MAIN CONTAINER GRID */}
       <div className="flex-grow pl-72 pr-8 w-full relative z-10 flex justify-center">
         <main className="p-6 lg:p-10 max-w-7xl w-full space-y-8 overflow-y-auto h-screen pb-16">
           
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-zinc-900 pb-6">
             <div>
               <div className="flex items-center gap-2 text-cyan-400 text-xs font-mono uppercase tracking-widest mb-1">
-                <Cpu className="w-3.5 h-3.5 animate-pulse" /> Multimodal Analytics Core
+                <Cpu className="w-3.5 h-3.5" /> Multimodal Analytics Core
               </div>
               <h1 className="text-3xl font-black text-white tracking-tight">AI Fleet Vision Inspector</h1>
               <p className="text-sm text-zinc-400 mt-0.5">Streamline diagnostic pipelines using processing models for rapid log synchronization.</p>
             </div>
           </div>
 
-          {/* 💎 RESTORED ACCURATE EMERALD GREEN DESIGN BANNER */}
           {statusMessage && (
             <div className={`p-4 rounded-xl border flex items-center justify-between gap-3 text-xs font-mono tracking-wide shadow-2xl transition-all border-l-4 ${
               statusMessage.includes("Success") 
@@ -300,11 +304,11 @@ export default function AiScannerPage() {
               </div>
 
               {scanResult ? (
-                <div className="grid grid-cols-1 gap-5 animate-in slide-in-from-bottom-2 duration-300">
+                <div className="grid grid-cols-1 gap-5">
                   <div className="bg-[#0d0522]/90 border border-zinc-800/80 p-6 rounded-2xl space-y-6 shadow-2xl relative overflow-hidden">
                     <div className="flex justify-between items-center border-b border-zinc-900 pb-4">
                       <h4 className="text-xs font-mono text-cyan-400 uppercase tracking-widest font-extrabold flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-cyan-500 animate-ping" />
+                        <span className="w-2 h-2 rounded-full bg-cyan-500" />
                         Extracted Parameters
                       </h4>
                     </div>
@@ -405,7 +409,7 @@ export default function AiScannerPage() {
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-zinc-900 mt-4">
-                <Button type="button" variant="glass" className="h-11 rounded-xl font-bold px-4 text-xs tracking-wide cursor-pointer border border-zinc-800 hover:bg-zinc-900" onClick={() => setIsConfirmerOpen(false)}>
+                <Button type="button" variant="outline" className="h-11 rounded-xl font-bold px-4 text-xs tracking-wide cursor-pointer border border-zinc-800 hover:bg-zinc-900" onClick={() => setIsConfirmerOpen(false)}>
                   Cancel
                 </Button>
                 <Button type="submit" disabled={commitLoading} className="h-11 rounded-xl font-bold px-5 text-xs tracking-wide shadow-lg cursor-pointer">
