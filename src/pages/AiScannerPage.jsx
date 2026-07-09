@@ -131,16 +131,16 @@ export default function AiScannerPage() {
 
       const response = await groqClient.chat.completions.create({
         messages: [
-          {
+        {
             role: "user",
             content: [
               { type: "text", text: promptText },
               { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } }
-            ]
-          }
-        ],
-        model: "llama-3.2-90b-vision-preview"
-      });
+           ]
+        }
+     ],
+     model: "llama-3.2-11b-vision-instruct" // 🌟 UPDATED STABLE MODEL
+  });
 
       let rawContent = response.choices[0].message.content?.trim() || "";
       
