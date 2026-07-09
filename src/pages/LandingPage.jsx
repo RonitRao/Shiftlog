@@ -328,7 +328,7 @@ export default function LandingPage({ session }) {
                 </h2>
 
                 <p className="text-zinc-400 text-lg leading-relaxed font-sans">
-                  Eliminate manual data entry entirely. Our purpose-built AI Vision Scanner instantly extracts odometers, load weights, and compliance signatures from any document upload.
+                  Eliminate manual data entry entirely. Our purpose-built AI Vision Scanner instantly extracts load weights, and compliance signatures from any document upload.
                 </p>
                 
                 <div className="space-y-5 pt-2">
