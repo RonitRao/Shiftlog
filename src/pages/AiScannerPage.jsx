@@ -122,12 +122,31 @@ export default function AiScannerPage() {
         }
       `;
 
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
       if (!apiKey) {
         throw new Error("Missing VITE_GEMINI_API_KEY environment variable.");
       }
 
-      const response = await fetch(
+      // 🔄 Automated retry wrapper to handle high-demand throttling gracefully
+      const fetchWithRetry = async (url, options, retries = 3, delay = 1000) => {
+        for (let i = 0; i < retries; i++) {
+          const res = await fetch(url, options);
+          if (res.ok) return res;
+          
+          const errBody = await res.json().catch(() => ({}));
+          const errorMessage = errBody.error?.message || "";
+          
+          // If it's a high demand/rate limit error and we have retries left, wait and retry
+          if ((res.status === 429 || errorMessage.includes("high demand") || errorMessage.includes("overloaded")) && i < retries - 1) {
+            await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i))); // exponential backoff
+            continue;
+          }
+          
+          throw new Error(errorMessage || `Request failed with status ${res.status}`);
+        }
+      };
+
+      const response = await fetchWithRetry(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`,
         {
           method: "POST",
