@@ -152,20 +152,23 @@ export default function Dashboard() {
       ).join("\n");
 
       const promptText = `
-        You are the Chief Fleet Technical Director for ShiftLog.
-        Analyze this live operational snapshot of fleet vehicle logs:
-        
-        ${summaryContext || "No telemetry logs currently registered."}
-        
-        Provide a comprehensive, high-impact 3-part operational diagnosis:
-        1. MACRO FLEET VULNERABILITIES: Detailed breakdown of grounded/maintenance units, recurring physical faults, corrosion, and wear patterns.
-        2. ASSET RISK RATIOS & ODOMETER LOGISTICS: Analysis of fleet transit balance and high-mileage assets requiring immediate preventative intervention.
-        3. STRATEGIC DIRECTIVES: Concrete, step-by-step operational directives for dispatch supervisors and maintenance crews for the upcoming shift cycle.
-        
-        Write with high technical depth, specific asset callouts, and clean formatting. Output clear, separate paragraphs.
+        You are the Senior Fleet Operations Director. Analyze this live fleet telemetry log data:
+
+        ${summaryContext || "No tracking entries registered."}
+
+        Generate an in-depth, professional 3-part operational assessment:
+        1. MACRO ASSET VULNERABILITIES: Detailed breakdown of grounded units, corrosion/body damage patterns, and immediate risks.
+        2. FLEET METRIC DISTRIBUTION: Analysis of active vs maintenance ratio, high-mileage wear, and asset utilization.
+        3. OPERATIONAL ACTION DIRECTIVES: Specific immediate instructions for technicians and shift operators.
+
+        Write distinct, comprehensive paragraphs with professional terminology and asset code callouts. Do not use markdown headers or lists.
       `;
 
       const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new Error("Missing VITE_GEMINI_API_KEY. Please verify your environment configuration.");
+      }
+
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`,
         {
@@ -180,9 +183,14 @@ export default function Dashboard() {
       );
 
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error?.message || "Diagnostics failed");
+      if (!response.ok) {
+        throw new Error(result.error?.message || "Inference failed to generate content.");
+      }
 
       const targetText = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+      if (!targetText) {
+        throw new Error("Received empty diagnostic stream from core.");
+      }
       
       let currentLength = 0;
       const interval = setInterval(() => {
@@ -196,7 +204,8 @@ export default function Dashboard() {
 
     } catch (err) {
       console.error("Dashboard Diagnostic Exception:", err);
-      setAiInsight("AI Operation Assessment Matrix:\n\nActive telemetry diagnostics indicate standard operational infrastructure parameters are tracking within acceptable parameters across all observed regional clusters. No immediate hardware faults mapped.\n\nRecommended Posture: Continue enforcing automated visual parameter verification loops during operator shifts to eliminate standard log drift errors.");
+      // Display the actual error so we know instantly if the endpoint rejected the call
+      setAiInsight(`AI Operational Assessment Error: ${err.message || "Failed to generate live neural analysis."}`);
       setAiLoading(false);
     }
   };
