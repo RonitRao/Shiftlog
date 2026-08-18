@@ -4,7 +4,6 @@ import Sidebar from "@/components/Sidebar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import LoadingScreen from "@/components/ui/LoadingScreen";
-import Groq from "groq-sdk"; 
 import { 
   UploadCloud, 
   Sparkles, 
@@ -19,12 +18,6 @@ import {
   Layers, 
   Sliders 
 } from "lucide-react";
-
-// Initialize the Groq SDK directly in the browser to prevent 10s serverless timeouts
-const groqClient = new Groq({
-  apiKey: import.meta.env.VITE_GROQ_API_KEY,
-  dangerouslyAllowBrowser: true
-});
 
 export default function AiScannerPage() {
   const [user, setUser] = useState(null);
@@ -99,7 +92,7 @@ export default function AiScannerPage() {
 
     try {
       const base64Image = await fileToBase64(imageFile);
-      const fleetContext = vehicles.map(v => `ID: ${v.id}, Number: ${v.fleet_number}, Model: ${v.model_name}`).join("\n");
+      const fleetContext = vehicles.map(v => `ID: ${v.id}, Number: ${v.fleet_number}, Model:${v.model_name}`).join("\n");
 
       const promptText = `
         You are an expert logistics AI inspector evaluating a vehicle's operational status.
@@ -129,20 +122,40 @@ export default function AiScannerPage() {
         }
       `;
 
-      const response = await groqClient.chat.completions.create({
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: promptText },
-              { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } }
-            ]
-          }
-        ],
-        model: "qwen/qwen3.6-27b" // 🌟 CORRECT LIVE PRODUCTION VISION MODEL
-      });
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new Error("Missing VITE_GEMINI_API_KEY environment variable.");
+      }
 
-      let rawContent = response.choices[0].message.content?.trim() || "";
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  { text: promptText },
+                  {
+                    inline_data: {
+                      mime_type: imageFile.type || "image/jpeg",
+                      data: base64Image
+                    }
+                  }
+                ]
+              }
+            ]
+          })
+        }
+      );
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error?.message || "Failed to process image with Gemini Flash.");
+      }
+
+      let rawContent = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
       
       if (rawContent.startsWith("```")) {
         rawContent = rawContent.replace(/^```json\s*/i, "").replace(/```$/, "").trim();
@@ -159,7 +172,7 @@ export default function AiScannerPage() {
       setFormVehicleId(parsedData.matched_vehicle_id);
       setFormStatus(parsedData.assigned_status);
       setFormNotes(parsedData.inspection_parameters);
-      setStatusMessage("Success: Groq Client Vision Diagnostic Complete.");
+      setStatusMessage("Success: AI Vision Diagnostic Complete.");
     } catch (err) {
       console.error("Vision Processing Exception caught: ", err);
       setStatusMessage(`AI Engine Error: ${err.message || "Failed parsing matrix layers."}`);
