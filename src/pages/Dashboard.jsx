@@ -145,22 +145,44 @@ export default function Dashboard() {
   const triggerLiveDiagnostics = async () => {
     setAiLoading(true);
     setAiInsight("");
+
     try {
-      const { groq } = await import("@/lib/groq");
-      const summaryContext = logs.map(l => `[Asset: ${l.vehicles?.fleet_number} - Status: ${l.shift_status}]: ${l.damage_report}`).join("; ");
-      
-      const response = await groq.chat.completions.create({
-        messages: [
-          { 
-            role: "system", 
-            content: "You are an expert full-stack logistics architect. Analyze this log snapshot data, identify macro asset vulnerabilities, maintenance patterns, and outline immediate fleet directives. Write exactly three clear, separate paragraphs. Output text line by line." 
-          },
-          { role: "user", content: summaryContext || "No tracking entries logged." }
-        ],
-        model: "meta-llama/llama-4-scout-17b-16e-instruct"
-      });
-      
-      const targetText = response.choices[0].message.content;
+      const summaryContext = logs.map(l => 
+        `[Asset: ${l.vehicles?.fleet_number || "Unknown"} (${l.vehicles?.model_name || "N/A"}) | Status: ${l.shift_status} | Odometer: ${l.odometer_reading || 0} KM | Damage/Remarks: ${l.damage_report || "None"}]`
+      ).join("\n");
+
+      const promptText = `
+        You are the Chief Fleet Technical Director for ShiftLog.
+        Analyze this live operational snapshot of fleet vehicle logs:
+        
+        ${summaryContext || "No telemetry logs currently registered."}
+        
+        Provide a comprehensive, high-impact 3-part operational diagnosis:
+        1. MACRO FLEET VULNERABILITIES: Detailed breakdown of grounded/maintenance units, recurring physical faults, corrosion, and wear patterns.
+        2. ASSET RISK RATIOS & ODOMETER LOGISTICS: Analysis of fleet transit balance and high-mileage assets requiring immediate preventative intervention.
+        3. STRATEGIC DIRECTIVES: Concrete, step-by-step operational directives for dispatch supervisors and maintenance crews for the upcoming shift cycle.
+        
+        Write with high technical depth, specific asset callouts, and clean formatting. Output clear, separate paragraphs.
+      `;
+
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [
+              { parts: [{ text: promptText }] }
+            ]
+          })
+        }
+      );
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error?.message || "Diagnostics failed");
+
+      const targetText = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
       
       let currentLength = 0;
       const interval = setInterval(() => {
@@ -173,7 +195,7 @@ export default function Dashboard() {
       }, 10);
 
     } catch (err) {
-      console.error(err);
+      console.error("Dashboard Diagnostic Exception:", err);
       setAiInsight("AI Operation Assessment Matrix:\n\nActive telemetry diagnostics indicate standard operational infrastructure parameters are tracking within acceptable parameters across all observed regional clusters. No immediate hardware faults mapped.\n\nRecommended Posture: Continue enforcing automated visual parameter verification loops during operator shifts to eliminate standard log drift errors.");
       setAiLoading(false);
     }
