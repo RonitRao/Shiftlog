@@ -139,7 +139,7 @@ export default function AiScannerPage() {
             ]
           }
         ],
-        model: "meta-llama/llama-4-scout-17b-16e-instruct" // 🌟 CORRECT LIVE PRODUCTION VISION MODEL
+        model: "qwen/qwen3.6-27b" // 🌟 CORRECT LIVE PRODUCTION VISION MODEL
       });
 
       let rawContent = response.choices[0].message.content?.trim() || "";
